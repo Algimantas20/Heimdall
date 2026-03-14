@@ -3,22 +3,32 @@
 #include <Wire.h>
 #include "Config.hpp"
 #include "Sensors/H_ICM_20948.hpp"
+#include "Sensors/H_BMP_280.hpp"
+#include "Sensors/H_TMP_102.hpp"
 
-TwoWire icm_bus = TwoWire(1);
-H_ICM_20948 icm(icm_bus);
+#define SDA_PIN 21
+#define SCL_PIN 22
 
-void scan_i2c(TwoWire &wire)
+TwoWire i2c_bus = TwoWire(1);
+
+H_ICM_20948 icm(&i2c_bus);
+H_BMP_280   bmp(&i2c_bus);
+H_TMP_102   tmp(&i2c_bus);
+
+H_ICM_20948::Packet icm_packet;
+
+void sensor_init()
 {
-    Serial.println("Scanning I2C bus...");
-
-    for(uint8_t addr = 1; addr < 127; addr++)
+    if(!icm.setup())
     {
-        wire.beginTransmission(addr);
-        if(wire.endTransmission() == 0)
-        {
-            Serial.print("Found device at 0x");
-            Serial.println(addr, HEX);
-        }
+        Serial.println("ICM setup failed");
+        while(1);
+    }
+
+    if(!bmp.setup())
+    {
+        Serial.println("BMP setup failed");
+        while(1);
     }
 }
 
@@ -26,28 +36,31 @@ void setup()
 {
     Serial.begin(115200);
 
-    icm_bus.begin(icm.sda_pin(), icm.scl_pin(), 100000);
-    delay(100);
-
-    scan_i2c(icm_bus);
-
-    if(!icm.setup())
+    if(!i2c_bus.begin(SDA_PIN, SCL_PIN, 100000))
     {
-        Serial.println("IMU setup failed");
-        while(1);
+        Serial.println("I2C init failed");
+        while(1) {}
     }
 
-    delay(500);
+    sensor_init();
 
+    delay(200);
 }
 
 void loop()
 {
-    H_ICM_20948::Packet packet;
-
-    if(icm.read_data(packet) && packet.acc.x != 0)
+    if(icm.read_data(icm_packet) && icm_packet.acc.x != 0)
     {
-        icm.display_data(packet);
+        icm.display_data(icm_packet);
+    }
+
+    float pressure = bmp.readPressure();
+    bmp.display_data(pressure);
+
+    float tempreture = tmp.readTemperature();
+    if (tempreture != NAN)
+    {
+        tmp.display_data(tempreture);
     }
 
     delay(200);

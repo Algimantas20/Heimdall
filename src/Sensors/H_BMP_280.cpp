@@ -1,7 +1,7 @@
-#include "Sensors/BMP_280.hpp"
+#include "Sensors/H_BMP_280.hpp"
 #include <Wire.h>
 
-bool BMP_280::setup()
+bool H_BMP_280::setup()
 {
     bool status = begin(0x76);
 
@@ -11,15 +11,9 @@ bool BMP_280::setup()
     return status;
 }
 
-void BMP_280::display_data(const float& pressure, const float& temperature)
+void H_BMP_280::display_data(const float& pressure)
 {   
     Serial.print("Pressure: ");
     Serial.print(pressure);
     Serial.println(" Pa");
-    
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
-    Serial.println(" °C");
-    
-    Serial.println();
 }
