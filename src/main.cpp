@@ -43,7 +43,7 @@ void setup()
     }
 
     sensor_init();
-
+    
     delay(200);
 }
 
@@ -62,6 +62,8 @@ void loop()
     {
         tmp.display_data(tempreture);
     }
+
+    Serial.println();
 
     delay(200);
 }

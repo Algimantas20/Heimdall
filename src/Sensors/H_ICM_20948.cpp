@@ -78,6 +78,4 @@ void H_ICM_20948::display_data(const Packet& p) const
     Serial.print(p.mag.y);
     Serial.print(" Z=");
     Serial.println(p.mag.z);
-
-    Serial.println();
 }

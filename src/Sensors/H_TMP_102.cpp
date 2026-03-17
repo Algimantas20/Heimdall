@@ -7,15 +7,19 @@ float H_TMP_102::readTemperature()
     wire_->endTransmission(false);
 
     wire_->requestFrom(TMP102_ADDRESS, 2);
-    if(wire_->available() < 2) return NAN;
+    if (wire_->available() < 2) return NAN;
 
     uint8_t msb = wire_->read();
     uint8_t lsb = wire_->read();
 
-    int16_t rawTemp = ((msb << 8) | lsb) >> 4;
-    float celsius = rawTemp * 0.0625;
+    int16_t rawTemp = (msb << 8) | lsb;
+    rawTemp >>= 4;
 
-    return celsius;
+    if (rawTemp & 0x0800) {
+        rawTemp |= 0xF000;
+    }
+
+    return rawTemp * 0.0625;
 }
 
 void H_TMP_102::display_data(const float& temperature)
