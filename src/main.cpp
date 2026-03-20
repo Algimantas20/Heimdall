@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "Config.hpp"
+#include "H_SD.hpp"
 #include "Sensors/H_ICM_20948.hpp"
 #include "Sensors/H_BMP_280.hpp"
 #include "Sensors/H_TMP_102.hpp"
@@ -10,6 +11,8 @@
 #define SCL_PIN 22
 
 TwoWire i2c_bus = TwoWire(1);
+
+H_SD sd;
 
 H_ICM_20948 icm(&i2c_bus);
 H_BMP_280   bmp(&i2c_bus);
@@ -35,6 +38,7 @@ void sensor_init()
 void setup()
 {
     Serial.begin(115200);
+    delay(500);
 
     if(!i2c_bus.begin(SDA_PIN, SCL_PIN, 100000))
     {
@@ -42,9 +46,10 @@ void setup()
         while(1) {}
     }
 
+    bool sd_status = sd.init();
+    if(!sd_status){ while(1); }
+
     sensor_init();
-    
-    delay(200);
 }
 
 void loop()
