@@ -2,11 +2,11 @@
 
 float H_TMP_102::readTemperature()
 {
-    wire_->beginTransmission(TMP102_ADDRESS);
+    wire_->beginTransmission(TMP_ADDRESS_);
     wire_->write(0x00);
     wire_->endTransmission(false);
 
-    wire_->requestFrom(TMP102_ADDRESS, 2);
+    wire_->requestFrom(TMP_ADDRESS_, 2);
     if (wire_->available() < 2) return NAN;
 
     uint8_t msb = wire_->read();
