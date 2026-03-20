@@ -4,12 +4,11 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define TMP102_ADDRESS 0x49
-
 class H_TMP_102
 {
 private:
   TwoWire *wire_;
+  static constexpr int TMP_ADDRESS_ = 0x49;
 
 public:
     H_TMP_102(TwoWire* wire = &Wire): wire_(wire) {};
