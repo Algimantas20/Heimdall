@@ -22,7 +22,8 @@ public:
         : ICM20948_WE(wire, ICM_ADDR) {}
 
     bool setup();
-    bool read_data(Packet& p);
+    Packet read();
+
     void display_data(const Packet& p) const;
 
     void convert_acc_raw(xyzFloat& data);

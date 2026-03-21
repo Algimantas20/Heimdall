@@ -4,7 +4,6 @@ bool H_ICM_20948::setup()
 {
     if(!init())
     {
-        Serial.println("ICM init failed");
         return false;
     }
 
@@ -33,7 +32,7 @@ void H_ICM_20948::convert_gyr_raw(xyzFloat& data)
     data.z /= m_GyroSensitivity;
 }
 
-bool H_ICM_20948::read_data(Packet& p)
+H_ICM_20948::Packet H_ICM_20948::read()
 {
     xyzFloat acc, gyr, mag;
     
@@ -46,11 +45,7 @@ bool H_ICM_20948::read_data(Packet& p)
     convert_acc_raw(acc);
     convert_gyr_raw(gyr);
 
-    p.acc = { acc.x, acc.y, acc.z };
-    p.gyr = { gyr.x, gyr.y, gyr.z };
-    p.mag = { mag.x, mag.y, mag.z };
-
-    return true;
+    return { {acc.x, acc.y, acc.z}, {gyr.x, gyr.y, gyr.z}, {mag.x, mag.y, mag.z} };
 }
 
 void H_ICM_20948::display_data(const Packet& p) const
