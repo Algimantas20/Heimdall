@@ -16,7 +16,6 @@ TwoWire i2c_bus = TwoWire(1);
 H_SensorHandler sensors(&i2c_bus);
 H_SD sd;
 
-
 void setup()
 {
     Serial.begin(115200);
@@ -42,14 +41,17 @@ void loop()
 {
     static H_SensorHandler::Packet packet;
 
-    sensors.read(packet);
-    char *data = sensors.format(packet);
-
-    bool log_status = sd.log(data);
-    if(!log_status)
+    static uint32_t last_read = 0;
+    if(millis() - last_read >= 200)
     {
-        Serial.println("Failed to log");
-    }
+        last_read = millis();
 
-    delay(200);
+        sensors.read(packet);
+        
+        bool log_status = sd.log(packet);
+        if(!log_status)
+        {
+            Serial.println("Failed to log");
+        }
+    }
 }

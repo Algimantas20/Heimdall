@@ -24,7 +24,11 @@ bool H_SD::init()
 
 bool H_SD::init_log(const char* header)
 {
+#if USE_BINARY_LOG
+    log_file_ = SD.open("/log.bin", FILE_WRITE);
+#else
     log_file_ = SD.open("/log.csv", FILE_WRITE);
+#endif
 
     if (!log_file_) 
     {
@@ -32,9 +36,10 @@ bool H_SD::init_log(const char* header)
         return false;
     }
 
-
+#if !USE_BINARY_LOG
     log_file_.println(header);
-    
+#endif
+
     Serial.println("Log file initialized successfully");
 
     return true;
@@ -46,15 +51,30 @@ void H_SD::close_log()
     log_file_.close();
 }
 
-bool H_SD::log(const char *data)
+bool H_SD::log(const H_SensorHandler::Packet &packet)
 {
     if(!log_file_)
     {
         return false;
     }
 
-    log_file_.println(data);
-    log_file_.flush();
+    size_t written = 0;
 
-    return true;
+#if USE_BINARY_LOG
+    written = log_file_.write((const uint8_t*)&packet, sizeof(packet));
+#else
+    char buffer[128];
+    H_SensorHandler::format(buffer, sizeof(buffer), packet);
+    written = log_file_.println(buffer);
+#endif
+
+    static uint32_t last_read = 0;
+    if(millis() - last_read >= 200)
+    {
+        log_file_.flush();
+    }
+
+    return (written > 0);
 }
+
+

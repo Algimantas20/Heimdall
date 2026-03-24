@@ -17,17 +17,20 @@ public:
     H_SensorHandler(TwoWire *wire = &Wire): bmp_(wire), tmp_(wire), icm_(wire) {}
     ~H_SensorHandler() = default;
 
-    struct Packet
+    struct __attribute__((packed)) Packet
     {
-        float temperature;
-        float pressure;
-        H_ICM_20948::Packet imu;
+        uint32_t time;
+        float temp;
+        float bar;
+        float accX, accY, accZ;
+        float gyrX, gyrY, gyrZ;
+        float magX, magY, magZ;
     };
 
     bool begin();
     bool read(Packet &packet);
 
-    char *format(const Packet &packet);
+    static char *format(char *buffer, size_t size, const Packet &packet);
 };
 
 #endif //!__H_SENSOR_HANDLER_HPP__

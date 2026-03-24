@@ -1,7 +1,10 @@
 #ifndef __H_SD__
 #define __H_SD__
 
+#include "H_SensorHandler.hpp"
 #include <SD.h>
+
+#define USE_BINARY_LOG 0
 
 class H_SD
 {
@@ -19,10 +22,10 @@ public:
 
     bool init();
 
-    bool init_log(const char* data);
+    bool init_log(const char *data);
     void close_log();
 
-    bool log(const char* data);
+    bool log(const H_SensorHandler::Packet &packet);
 };
 
 #endif //!__H_SD__

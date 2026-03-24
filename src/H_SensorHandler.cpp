@@ -20,35 +20,46 @@ bool H_SensorHandler::begin()
 
     return true;
 }
-
 bool H_SensorHandler::read(Packet &packet)
 {
-    packet.pressure = bmp_.readPressure();
-    packet.temperature = tmp_.readTemperature();
-    packet.imu = icm_.read();
+    packet.time = millis();
+    packet.bar = bmp_.readPressure();
+    packet.temp = tmp_.readTemperature();
+
+    H_ICM_20948::Packet icmPacket = icm_.read();
+
+    packet.accX = icmPacket.acc.x;
+    packet.accY = icmPacket.acc.y;
+    packet.accZ = icmPacket.acc.z;
+
+    packet.gyrX = icmPacket.gyr.x;
+    packet.gyrY = icmPacket.gyr.y;
+    packet.gyrZ = icmPacket.gyr.z;
+
+    packet.magX = icmPacket.mag.x;
+    packet.magY = icmPacket.mag.y;
+    packet.magZ = icmPacket.mag.z;
 
     return true;
 }
 
-char* H_SensorHandler::format(const Packet &packet)
+char *H_SensorHandler::format(char* buffer, size_t size, const Packet &packet)
 {
-    static char data[128];
-    
-    snprintf(data, sizeof(data),
+    snprintf(buffer, size,
         "%lu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-        millis(),
-        packet.temperature,
-        packet.pressure,
-        packet.imu.acc.x,
-        packet.imu.acc.y,
-        packet.imu.acc.z,
-        packet.imu.gyr.x,
-        packet.imu.gyr.y,
-        packet.imu.gyr.z,
-        packet.imu.mag.x,
-        packet.imu.mag.y,
-        packet.imu.mag.z
+        packet.time,
+        packet.temp,
+        packet.bar,
+        packet.accX,
+        packet.accY,
+        packet.accZ,
+        packet.gyrX,
+        packet.gyrY,
+        packet.gyrZ,
+        packet.magX,
+        packet.magY,
+        packet.magZ
     );
 
-    return data;
+    return buffer;
 }
