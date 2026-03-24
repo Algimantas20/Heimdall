@@ -1,6 +1,5 @@
 #include "H_SD.hpp"
 #include <SPI.h>
-#include <ctime>
 
 H_SD::~H_SD()
 {
@@ -47,6 +46,11 @@ bool H_SD::init_log(const char* header)
 
 void H_SD::close_log() 
 {
+    if (!log_file_)
+    {
+        return;
+    }
+    
     log_file_.flush();
     log_file_.close();
 }
@@ -63,7 +67,7 @@ bool H_SD::log(const H_SensorHandler::Packet &packet)
 #if USE_BINARY_LOG
     written = log_file_.write((const uint8_t*)&packet, sizeof(packet));
 #else
-    char buffer[128];
+    static char buffer[128];
     H_SensorHandler::format(buffer, sizeof(buffer), packet);
     written = log_file_.println(buffer);
 #endif
@@ -72,6 +76,7 @@ bool H_SD::log(const H_SensorHandler::Packet &packet)
     if(millis() - last_read >= 200)
     {
         log_file_.flush();
+        last_read += 200;
     }
 
     return (written > 0);

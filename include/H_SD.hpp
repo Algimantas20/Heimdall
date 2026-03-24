@@ -1,5 +1,5 @@
-#ifndef __H_SD__
-#define __H_SD__
+#ifndef __H_SD_HPP__
+#define __H_SD_HPP__
 
 #include "H_SensorHandler.hpp"
 #include <SD.h>
