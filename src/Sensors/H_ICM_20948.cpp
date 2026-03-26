@@ -1,76 +1,70 @@
 #include "Sensors/H_ICM_20948.hpp"
 
-bool H_ICM_20948::setup()
-{
-    if(!init())
-    {
-        return false;
-    }
+bool H_ICM_20948::setup() {
+  if (!init()) {
+    return false;
+  }
 
-    initMagnetometer();
+  initMagnetometer();
 
-    setAccRange(ICM20948_ACC_RANGE_2G);
-    setGyrRange(ICM20948_GYRO_RANGE_250);
-    setMagOpMode(AK09916_CONT_MODE_100HZ);
+  setAccRange(ICM20948_ACC_RANGE_2G);
+  setGyrRange(ICM20948_GYRO_RANGE_250);
+  setMagOpMode(AK09916_CONT_MODE_100HZ);
 
-    autoOffsets();
+  autoOffsets();
 
-    return true;
+  return true;
 }
 
-void H_ICM_20948::convert_acc_raw(xyzFloat& data)
-{
-    data.x /= m_AccSensitivity;
-    data.y /= m_AccSensitivity;
-    data.z /= m_AccSensitivity;
+void H_ICM_20948::convert_acc_raw(xyzFloat& data) {
+  data.x /= kAccSensitivity;
+  data.y /= kAccSensitivity;
+  data.z /= kAccSensitivity;
 }
 
-void H_ICM_20948::convert_gyr_raw(xyzFloat& data)
-{
-    data.x /= m_GyroSensitivity;
-    data.y /= m_GyroSensitivity;
-    data.z /= m_GyroSensitivity;
+void H_ICM_20948::convert_gyr_raw(xyzFloat& data) {
+  data.x /= kGyroSensitivity;
+  data.y /= kGyroSensitivity;
+  data.z /= kGyroSensitivity;
 }
 
-H_ICM_20948::Packet H_ICM_20948::read()
-{
-    xyzFloat acc, gyr, mag;
-    
-    readSensor();
+H_ICM_20948::Packet H_ICM_20948::read() {
+  xyzFloat acc, gyr, mag;
 
-    getAccRawValues(&acc);
-    getGyrRawValues(&gyr);
-    getMagValues(&mag);
+  readSensor();
 
-    convert_acc_raw(acc);
-    convert_gyr_raw(gyr);
+  getAccRawValues(&acc);
+  getGyrRawValues(&gyr);
+  getMagValues(&mag);
 
-    return { {acc.x, acc.y, acc.z}, {gyr.x, gyr.y, gyr.z}, {mag.x, mag.y, mag.z} };
+  convert_acc_raw(acc);
+  convert_gyr_raw(gyr);
+
+  return {{acc.x, acc.y, acc.z}, {gyr.x, gyr.y, gyr.z}, {mag.x, mag.y, mag.z}};
 }
 
-void H_ICM_20948::display_data(const Packet& p) const
-{
-    Serial.print("Accel (g): ");
-    Serial.print("X=");
-    Serial.print(p.acc.x);
-    Serial.print(" Y=");
-    Serial.print(p.acc.y);
-    Serial.print(" Z=");
-    Serial.println(p.acc.z);
+void H_ICM_20948::display_data(const Packet& p) const {
+  Serial.print("Accel (g): ");
+  Serial.print("X=");
+  Serial.print(p.acc.x);
+  Serial.print(" Y=");
+  Serial.print(p.acc.y);
+  Serial.print(" Z=");
+  Serial.println(p.acc.z);
 
-    Serial.print("Gyro (dps): ");
-    Serial.print("X=");
-    Serial.print(p.gyr.x);
-    Serial.print(" Y=");
-    Serial.print(p.gyr.y);
-    Serial.print(" Z=");
-    Serial.println(p.gyr.z);
+  Serial.print("Gyro (dps): ");
+  Serial.print("X=");
+  Serial.print(p.gyr.x);
+  Serial.print(" Y=");
+  Serial.print(p.gyr.y);
+  Serial.print(" Z=");
+  Serial.println(p.gyr.z);
 
-    Serial.print("Mag (µT): ");
-    Serial.print("X=");
-    Serial.print(p.mag.x);
-    Serial.print(" Y=");
-    Serial.print(p.mag.y);
-    Serial.print(" Z=");
-    Serial.println(p.mag.z);
+  Serial.print("Mag (µT): ");
+  Serial.print("X=");
+  Serial.print(p.mag.x);
+  Serial.print(" Y=");
+  Serial.print(p.mag.y);
+  Serial.print(" Z=");
+  Serial.println(p.mag.z);
 }
