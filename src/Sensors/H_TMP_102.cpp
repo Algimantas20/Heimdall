@@ -3,11 +3,13 @@
 float H_TMP_102::readTemperature() {
   wire_->beginTransmission(TMP_ADDR);
   wire_->write(0x00);
-  wire_->endTransmission(false);
 
-  wire_->requestFrom(TMP_ADDR, 2);
+  if (wire_->endTransmission() != 0) {
+    return NAN;
+  }
 
-  if (wire_->available() < 2) {
+  int bytes = wire_->requestFrom(TMP_ADDR, 2);
+  if (bytes != 2) {
     return NAN;
   }
 

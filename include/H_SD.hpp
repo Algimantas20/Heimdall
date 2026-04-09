@@ -15,8 +15,6 @@ class H_SD {
   static constexpr int MOSI_PIN_ = 23;
   static constexpr int CS_PIN_ = 5;
 
-  static inline constexpr bool kUseBinaryLog = true;
-
   File log_file_;
 
  public:

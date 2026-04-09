@@ -6,7 +6,7 @@
 
 class H_BMP_280 : public Adafruit_BMP280 {
  private:
-  static inline constexpr int kBmpAddr = 0x76;
+  static constexpr int kBmpAddr = 0x76;
 
  public:
   H_BMP_280(TwoWire* theWire = &Wire) : Adafruit_BMP280(theWire) {}

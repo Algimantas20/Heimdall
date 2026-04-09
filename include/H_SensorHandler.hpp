@@ -12,7 +12,7 @@ class H_SensorHandler {
   H_ICM_20948 icm_;
 
  public:
-  H_SensorHandler(TwoWire* wire = &Wire) : bmp_(wire), tmp_(wire), icm_(wire) {}
+  H_SensorHandler(TwoWire* wire = &Wire) : icm_(wire), bmp_(wire), tmp_(wire) {}
 
   ~H_SensorHandler() = default;
 

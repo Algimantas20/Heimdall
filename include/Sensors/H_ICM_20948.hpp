@@ -5,10 +5,10 @@
 
 class H_ICM_20948 : public ICM20948_WE {
  private:
-  static inline constexpr float kAccSensitivity = 16384.0f;  // ±2g
-  static inline constexpr float kGyroSensitivity = 131.0f;   // ±250 dps
+  static constexpr float kAccSensitivity = 16384.0f;  // ±2g
+  static constexpr float kGyroSensitivity = 131.0f;   // ±250 dps
 
-  static inline constexpr int kIcmAddr = 0x68;
+  static constexpr int kIcmAddr = 0x68;
 
  public:
   struct Accel {

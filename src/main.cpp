@@ -13,46 +13,42 @@
 #define CSV_HEADER "time,temp,bar,accX,accY,accZ,gyrX,gyrY,gyrZ,magX,magY,magZ"
 
 TwoWire i2c_bus = TwoWire(1);
+const int TX_PIN = 1;
+const int RX_PIN = 3;
 
 H_SensorHandler sensors(&i2c_bus);
 H_SD sd;
 
 void setup() {
   Serial.begin(115200);
-  delay(500);
 
   if (!i2c_bus.begin(SDA_PIN, SCL_PIN, 400000)) {
     Serial.println("I2C init failed");
     while (true) {}
   }
 
-  bool sd_status = sd.init();
-  if (!sd_status) {
+  if (!sd.init()) {
     while (true) {}
   }
 
-  bool log_status = sd.init_log(CSV_HEADER);
-  if (!log_status) {
+  if (!sd.init_log(CSV_HEADER)) {
     while (true) {}
   }
 
-  bool sensor_status = sensors.begin();
-  if (!sensor_status) {
+  if (!sensors.begin()) {
     while (true) {}
   }
 }
 
 void loop() {
   static H_SensorHandler::Packet packet;
-
   static uint32_t last_read = 0;
+
   if (millis() - last_read >= 200) {
     last_read = millis();
-
     sensors.read(packet);
 
-    bool log_status = sd.log(packet);
-    if (!log_status) {
+    if (!sd.log(packet)) {
       Serial.println("Failed to log");
     }
   }

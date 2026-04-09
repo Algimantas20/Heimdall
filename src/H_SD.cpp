@@ -19,20 +19,19 @@ bool H_SD::init() {
 
 bool H_SD::init_log(const char* header) {
 
-  if constexpr (kUseBinaryLog) {
-    log_file_ = SD.open("/log.bin", FILE_WRITE);
-  } else {
-    log_file_ = SD.open("/log.csv", FILE_WRITE);
-  }
+#if USE_BINARY_LOG
+  log_file_ = SD.open("/log.bin", FILE_WRITE);
+#else
+  log_file_ = SD.open("/log.csv", FILE_WRITE);
+#endif
 
   if (!log_file_) {
     Serial.println("Failed to initialized log file");
     return false;
   }
-
-  if constexpr (!kUseBinaryLog) {
-    log_file_.println(header);
-  }
+#if !USE_BINARY_LOG
+  log_file_.println(header);
+#endif
 
   Serial.println("Log file initialized successfully");
 
@@ -55,14 +54,14 @@ bool H_SD::log(const H_SensorHandler::Packet& packet) {
 
   size_t written = 0;
 
-  if constexpr (kUseBinaryLog) {
-    const uint8_t* buffer = reinterpret_cast<const uint8_t*>(&packet);
-    written = log_file_.write(buffer, sizeof(packet));
-  } else {
-    char buffer[128];
-    H_SensorHandler::format(buffer, sizeof(buffer), packet);
-    written = log_file_.println(buffer);
-  }
+#if USE_BINARY_LOG
+  const uint8_t* buffer = reinterpret_cast<const uint8_t*>(&packet);
+  written = log_file_.write(buffer, sizeof(packet));
+#else
+  char buffer[128];
+  H_SensorHandler::format(buffer, sizeof(buffer), packet);
+  written = log_file_.println(buffer);
+#endif
 
   static uint32_t last_flush = 0;
   uint32_t now = millis();
@@ -72,9 +71,9 @@ bool H_SD::log(const H_SensorHandler::Packet& packet) {
     last_flush = now;
   }
 
-  if constexpr (kUseBinaryLog) {
-    return (written == sizeof(packet));
-  } else {
-    return (written > 0);
-  }
+#if USE_BINARY_LOG
+  return (written == sizeof(packet));
+#else
+  return (written > 0);
+#endif
 }
