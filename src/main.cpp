@@ -9,7 +9,7 @@
 #include "Sensors/H_ICM_20948.hpp"
 #include "Sensors/H_TMP_102.hpp"
 
-#define CSV_HEADER "time,temp,bar,accX,accY,accZ,gyrX,gyrY,gyrZ,magX,magY,magZ"
+#define CSV_HEADER "time,temp,bar,accX,accY,accZ,gyrX,gyrY,gyrZ"
 
 TaskHandle_t SensorTaskHandle = nullptr;
 TaskHandle_t RadioRxTaskHandle = nullptr;
@@ -58,12 +58,13 @@ void SensorTask(void* parameter) {
 
       sensors.read(packet);
 
-      if (!sd.log(packet)) {
+      char* msg = H_SensorHandler::format(buffer, sizeof(buffer), packet);
+
+      if (!sd.log(msg)) {
         ErrorLedBlink();
         Serial.println("Failed to log");
       }
 
-      char* msg = H_SensorHandler::format(buffer, sizeof(buffer), packet);
       radio.sendPacket(msg);
     }
 

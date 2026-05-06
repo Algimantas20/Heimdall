@@ -47,28 +47,7 @@ void H_SD::close_log() {
   log_file_.close();
 }
 
-bool H_SD::log(const H_SensorHandler::Packet& packet) {
-  if (!log_file_) {
-    return false;
-  }
-
-  size_t written = 0;
-
-  const uint8_t* buffer = reinterpret_cast<const uint8_t*>(&packet);
-  written = log_file_.write(buffer, sizeof(packet));
-
-  static uint32_t last_flush = 0;
-  uint32_t now = millis();
-
-  if (now - last_flush >= 200) {
-    log_file_.flush();
-    last_flush = now;
-  }
-
-  return (written == sizeof(packet));
-}
-
-bool H_SD::log(const char* buffer, size_t size) {
+bool H_SD::log(const char* buffer) {
 
   if (!log_file_) {
     return false;

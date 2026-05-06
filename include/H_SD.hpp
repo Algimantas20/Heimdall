@@ -25,7 +25,7 @@ class H_SD {
   void close_log();
 
   bool log(const H_SensorHandler::Packet& packet);
-  bool log(const char* buffer, size_t size);
+  bool log(const char* buffer);
 };
 
 #endif  //!__H_SD__
