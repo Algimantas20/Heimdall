@@ -11,23 +11,24 @@ class H_SensorHandler {
   H_TMP_102 tmp_;
   H_ICM_20948 icm_;
 
+  static constexpr int SDA_PIN_ = 21;
+  static constexpr int SCL_PIN_ = 22;
+
  public:
   H_SensorHandler(TwoWire* wire = &Wire) : icm_(wire), bmp_(wire), tmp_(wire) {}
 
   ~H_SensorHandler() = default;
 
-  struct __attribute__((packed)) Packet {
-    uint32_t time;
+  struct __attribute__((__packed__)) Packet {
+    unsigned long time;
     float temp;
     float bar;
     float accX, accY, accZ;
     float gyrX, gyrY, gyrZ;
-    float magX, magY, magZ;
   };
 
-  bool begin();
+  bool begin(TwoWire* i2c_bus);
   bool read(Packet& packet);
-
   static char* format(char* buffer, size_t size, const Packet& packet);
 };
 

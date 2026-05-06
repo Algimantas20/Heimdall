@@ -1,12 +1,11 @@
 #include "H_SensorHandler.hpp"
 
-bool H_SensorHandler::begin() {
-  if (!icm_.setup()) {
-    Serial.println("ICM-20948 failed to initialize");
-    return false;
-  }
+bool H_SensorHandler::begin(TwoWire* i2c_bus) {
 
-  Serial.println("ICM-20948 initialized");
+  if (!i2c_bus->begin(SDA_PIN_, SCL_PIN_, 400000)) {
+    Serial.println("I2C init failed");
+    while (true) {}
+  }
 
   if (!bmp_.setup()) {
     Serial.println("BMP-280 failed to initialize");
@@ -14,6 +13,13 @@ bool H_SensorHandler::begin() {
   }
 
   Serial.println("BMP-280 initialized");
+
+  if (!icm_.setup()) {
+    Serial.println("ICM-20948 failed to initialize");
+    return false;
+  }
+
+  Serial.println("ICM-20948 initialized");
 
   return true;
 }
@@ -33,19 +39,25 @@ bool H_SensorHandler::read(Packet& packet) {
   packet.gyrY = icmPacket.gyr.y;
   packet.gyrZ = icmPacket.gyr.z;
 
-  packet.magX = icmPacket.mag.x;
-  packet.magY = icmPacket.mag.y;
-  packet.magZ = icmPacket.mag.z;
-
   return true;
 }
 
 char* H_SensorHandler::format(char* buffer, size_t size, const Packet& packet) {
-  snprintf(buffer, size,
-           "%lu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
-           packet.time, packet.temp, packet.bar, packet.accX, packet.accY,
-           packet.accZ, packet.gyrX, packet.gyrY, packet.gyrZ, packet.magX,
-           packet.magY, packet.magZ);
+  const int len =
+      snprintf(buffer, size, "%lu,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f",
+               packet.time, packet.temp, packet.bar, packet.accX, packet.accY,
+               packet.accZ, packet.gyrX, packet.gyrY, packet.gyrZ);
+
+  if (len < 0) {
+    if (size > 0) {
+      buffer[0] = '\0';
+    }
+    return buffer;
+  }
+
+  if (static_cast<size_t>(len) >= size) {
+    buffer[size - 1] = '\0';
+  }
 
   return buffer;
 }

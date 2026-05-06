@@ -19,14 +19,9 @@ class H_ICM_20948 : public ICM20948_WE {
     float x, y, z;
   };
 
-  struct Mag {
-    float x, y, z;
-  };
-
   struct Packet {
     Accel acc;
     Gyro gyr;
-    Mag mag;
   };
 
   H_ICM_20948(TwoWire* wire = &Wire) : ICM20948_WE(wire, kIcmAddr) {}

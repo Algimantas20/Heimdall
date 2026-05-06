@@ -6,13 +6,11 @@
 
 #include "H_SensorHandler.hpp"
 
-#define USE_BINARY_LOG 0
-
 class H_SD {
  private:
-  static constexpr int SCK_PIN_ = 18;
+  static constexpr int SCK_PIN_ = 15;
   static constexpr int MISO_PIN_ = 19;
-  static constexpr int MOSI_PIN_ = 23;
+  static constexpr int MOSI_PIN_ = 18;
   static constexpr int CS_PIN_ = 5;
 
   File log_file_;
@@ -27,6 +25,7 @@ class H_SD {
   void close_log();
 
   bool log(const H_SensorHandler::Packet& packet);
+  bool log(const char* buffer, size_t size);
 };
 
 #endif  //!__H_SD__

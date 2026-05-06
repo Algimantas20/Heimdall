@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define TMP_ADDR 0x49
+#define TMP_ADDR 0x48
 
 class H_TMP_102 {
  private:
