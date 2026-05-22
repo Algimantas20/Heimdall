@@ -1,50 +1,25 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <driver/i2c.h>
+#include <queue>
 
+#include "H_Motors.hpp"
 #include "H_Radio.hpp"
 #include "H_SD.hpp"
 #include "H_SensorHandler.hpp"
-#include "Sensors/H_BMP_280.hpp"
-#include "Sensors/H_ICM_20948.hpp"
-#include "Sensors/H_TMP_102.hpp"
 
-#define CSV_HEADER "time,temp,bar,accX,accY,accZ,gyrX,gyrY,gyrZ"
+QueueHandle_t telemetry_queue;
 
 TaskHandle_t SensorTaskHandle = nullptr;
 TaskHandle_t RadioRxTaskHandle = nullptr;
 
-TwoWire i2c_bus = TwoWire(1);
 HardwareSerial radio_serial(1);
 
-H_SensorHandler sensors(&i2c_bus);
+H_SensorHandler sensors;
 
 H_Radio radio(radio_serial);
+H_Motors motors;
 H_SD sd;
-
-void ErrorLedBlink() {
-  static bool has_blinked = false;
-  static uint32_t last_toggle_time = 0;
-  static int toggle_count = 0;
-  static bool led_state = HIGH;
-
-  if (has_blinked)
-    return;
-
-  uint32_t current_time = millis();
-
-  if (current_time - last_toggle_time >= 100) {
-    led_state = !led_state;
-    digitalWrite(BUILTIN_LED, led_state);
-    last_toggle_time = current_time;
-    toggle_count++;
-
-    if (toggle_count >= 20) {
-      digitalWrite(BUILTIN_LED, HIGH);
-      has_blinked = true;
-    }
-  }
-}
 
 void SensorTask(void* parameter) {
   H_SensorHandler::Packet packet;
@@ -53,29 +28,39 @@ void SensorTask(void* parameter) {
   uint32_t last_read = 0;
 
   while (true) {
-    if (millis() - last_read >= 200) {
-      last_read = millis();
 
-      sensors.read(packet);
+    last_read = millis();
 
-      char* msg = H_SensorHandler::format(buffer, sizeof(buffer), packet);
+    H_Radio::TelemetryMessage msg;
 
-      if (!sd.log(msg)) {
-        ErrorLedBlink();
-        Serial.println("Failed to log");
-      }
+    sensors.read(packet);
 
-      radio.sendPacket(msg);
+    strncpy(msg.data, H_SensorHandler::format(buffer, sizeof(buffer), packet),
+            sizeof(msg.data) - 1);
+    msg.data[sizeof(msg.data) - 1] = '\0';
+
+    if (!sd.log(msg.data)) {
+      Serial.println("Failed to log");
     }
 
-    vTaskDelay(5 / portTICK_PERIOD_MS);
+    Serial.println(msg.data);
+
+    xQueueSend(telemetry_queue, &msg, 0);
+
+    vTaskDelay(200 / portTICK_PERIOD_MS);
   }
 }
 
 void RadioRxTask(void* parameter) {
   while (true) {
-    while (radio_serial.available()) {
-      char c = radio_serial.read();
+    H_Radio::MotorCommand cmd;
+
+    bool status = radio.sendTelemetry(telemetry_queue);
+    //Serial.println(status ? "Telemetry sent" : "Failed to send telemetry");
+
+    radio.processIncomingPackets();
+    if (radio.popCommand(cmd)) {
+      motors.executeCommand(cmd);
     }
 
     vTaskDelay(1 / portTICK_PERIOD_MS);
@@ -84,23 +69,23 @@ void RadioRxTask(void* parameter) {
 
 void setup() {
 
-  pinMode(2, OUTPUT);
-
   Serial.begin(115200);
   radio.begin(115200);
 
+  telemetry_queue = xQueueCreate(10, sizeof(H_Radio::TelemetryMessage));
+
   if (!sd.init()) {
-    ErrorLedBlink();
+    radio.sendPacket("SD init failed");
     while (true) {}
   }
 
-  if (!sd.init_log(CSV_HEADER)) {
-    ErrorLedBlink();
+  if (!sd.init_log()) {
+    radio.sendPacket("Failed to initialize log file");
     while (true) {}
   }
 
-  if (!sensors.begin(&i2c_bus)) {
-    ErrorLedBlink();
+  if (!sensors.begin()) {
+    radio.sendPacket("Failed to initialize sensors");
     while (true) {}
   }
 

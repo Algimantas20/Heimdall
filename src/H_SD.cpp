@@ -17,7 +17,7 @@ bool H_SD::init() {
   return false;
 }
 
-bool H_SD::init_log(const char* header) {
+bool H_SD::init_log() {
 
 #if USE_BINARY_LOG
   log_file_ = SD.open("/log.bin", FILE_WRITE);
@@ -30,7 +30,7 @@ bool H_SD::init_log(const char* header) {
     return false;
   }
 #if !USE_BINARY_LOG
-  log_file_.println(header);
+  log_file_.println("time,temp,bar,accX,accY,accZ,gyrX,gyrY,gyrZ");
 #endif
 
   Serial.println("Log file initialized successfully");

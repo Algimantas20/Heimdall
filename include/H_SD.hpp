@@ -4,8 +4,6 @@
 #include <SD.h>
 #include <SPI.h>
 
-#include "H_SensorHandler.hpp"
-
 class H_SD {
  private:
   static constexpr int SCK_PIN_ = 15;
@@ -21,10 +19,9 @@ class H_SD {
 
   bool init();
 
-  bool init_log(const char* data);
+  bool init_log();
   void close_log();
 
-  bool log(const H_SensorHandler::Packet& packet);
   bool log(const char* buffer);
 };
 

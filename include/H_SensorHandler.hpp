@@ -1,21 +1,26 @@
 #ifndef __H_SENSOR_HANDLER_HPP__
 #define __H_SENSOR_HANDLER_HPP__
 
-#include "Sensors/H_BMP_280.hpp"
-#include "Sensors/H_ICM_20948.hpp"
-#include "Sensors/H_TMP_102.hpp"
+#include <Wire.h>
+#include "Adafruit_BME680.h"
+#include "MPU6050.h"
 
 class H_SensorHandler {
  private:
-  H_BMP_280 bmp_;
-  H_TMP_102 tmp_;
-  H_ICM_20948 icm_;
+  Adafruit_BME680 bme_;
+  MPU6050 mpu_;
 
   static constexpr int SDA_PIN_ = 21;
   static constexpr int SCL_PIN_ = 22;
 
+  static constexpr int kMPUAddress_ = 0x69;
+  static constexpr int kBMEAddress_ = 0x77;
+
+  static constexpr float accel_scale_ = 16384.0f;  // For ±2g
+  static constexpr float gyro_scale_ = 131.0f;     // For ±250°/s
+
  public:
-  H_SensorHandler(TwoWire* wire = &Wire) : icm_(wire), bmp_(wire), tmp_(wire) {}
+  H_SensorHandler() : mpu_(kMPUAddress_) {}
 
   ~H_SensorHandler() = default;
 
@@ -27,7 +32,7 @@ class H_SensorHandler {
     float gyrX, gyrY, gyrZ;
   };
 
-  bool begin(TwoWire* i2c_bus);
+  bool begin();
   bool read(Packet& packet);
   static char* format(char* buffer, size_t size, const Packet& packet);
 };

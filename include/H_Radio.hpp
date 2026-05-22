@@ -1,32 +1,50 @@
 #ifndef __H_RADIO_HPP__
 #define __H_RADIO_HPP__
 
+#include <Arduino.h>
 #include <HardwareSerial.h>
+#include <queue>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/semphr.h>
 
 class H_Radio {
- private:
-  static constexpr int address_ = 1;
-  static constexpr int recvr_address_ = 2;
-  static constexpr int network_id_ = 17;
-  static constexpr int band_ = 868500000;
-
-  static constexpr int TX_PIN_ = 17;
-  static constexpr int RX_PIN_ = 16;
-
-  HardwareSerial serial_;
-
  public:
-  H_Radio(HardwareSerial& serial) : serial_(serial) {};
-  ~H_Radio() = default;
+  struct MotorCommand {
+    bool valid = false;
 
-  int get_receiver() const { return recvr_address_; }
+    char command[16] = {0};
 
-  void begin(uint32_t baud);
+    int speed = 0;
+    int duration_ms = 0;
+  };
 
-  void sendAT(const char* msg);
-  void sendATf(const char* format, ...);
+  struct TelemetryMessage {
+    char data[128];
+  };
 
-  void sendPacket(const char* msg);
+  explicit H_Radio(HardwareSerial& serial);
+
+  void begin(uint32_t baud_rate);
+
+  bool sendPacket(const char* message);
+  bool sendTelemetry(QueueHandle_t telemetry_queue);
+
+  void processIncomingPackets();
+  bool popCommand(MotorCommand& cmd);
+
+ private:
+  static constexpr size_t kMaxPacketSize = 128;
+  char rx_buffer_[kMaxPacketSize];
+  size_t rx_index_ = 0;
+
+  HardwareSerial& serial_;
+
+  SemaphoreHandle_t serial_mutex_;
+  QueueHandle_t command_queue_;
+
+  bool parsePacket(const char* packet, MotorCommand& cmd);
 };
 
 #endif  //!__H_RADIO_HPP__

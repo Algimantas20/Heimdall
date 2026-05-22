@@ -1,40 +1,138 @@
 #include "H_Radio.hpp"
-#include <cstdarg>
-#include <cstdio>
 
-void H_Radio::begin(uint32_t baud) {
-  serial_.begin(baud, SERIAL_8N1, RX_PIN_, TX_PIN_);
-  delay(100);
+#include <cstring>
 
-  sendATf("AT+ADDRESS=%d", address_);
-  delay(100);
-  sendATf("AT+NETWORKID=%d", network_id_);
-  delay(100);
-  sendATf("AT+BAND=%d", band_);
+H_Radio::H_Radio(HardwareSerial& serial) : serial_(serial) {
+  serial_mutex_ = xSemaphoreCreateMutex();
+
+  command_queue_ = xQueueCreate(10, sizeof(MotorCommand));
 }
 
-void H_Radio::sendAT(const char* msg) {
-  serial_.print(msg);
-  serial_.print("\r\n");
+void H_Radio::begin(uint32_t baud_rate) {
+  serial_.begin(baud_rate);
 }
 
-void H_Radio::sendATf(const char* format, ...) {
-  char buffer[256];
+bool H_Radio::sendTelemetry(QueueHandle_t telemetry_queue) {
 
-  va_list args;
-  va_start(args, format);
-  int len = vsnprintf(buffer, sizeof(buffer), format, args);
-  va_end(args);
+  TelemetryMessage msg_struct;
+  if (xQueueReceive(telemetry_queue, &msg_struct, 0) != pdTRUE) {
+    return false;
+  }
 
-  if (len < 0 || len >= static_cast<int>(sizeof(buffer))) {
+  const char* message = msg_struct.data;
+
+  return sendPacket(message);
+}
+
+bool H_Radio::sendPacket(const char* message) {
+  if (!xSemaphoreTake(serial_mutex_, pdMS_TO_TICKS(100))) {
+    return false;
+  }
+
+  serial_.print("AT+SEND=");
+  serial_.println(message);
+
+  xSemaphoreGive(serial_mutex_);
+
+  return true;
+}
+
+void H_Radio::processIncomingPackets() {
+  if (!xSemaphoreTake(serial_mutex_, pdMS_TO_TICKS(10))) {
     return;
   }
 
-  sendAT(buffer);
+  while (serial_.available()) {
+    char c = static_cast<char>(serial_.read());
+
+    if (rx_index_ < (kMaxPacketSize - 1)) {
+      rx_buffer_[rx_index_++] = c;
+    }
+
+    if (c == '\n') {
+      rx_buffer_[rx_index_] = '\0';
+
+      MotorCommand cmd;
+
+      if (parsePacket(rx_buffer_, cmd)) {
+        if (xQueueSend(command_queue_, &cmd, 0) != pdTRUE) {
+          Serial.println("Command queue full");
+        }
+      }
+
+      rx_index_ = 0;
+    }
+  }
+
+  xSemaphoreGive(serial_mutex_);
 }
 
-void H_Radio::sendPacket(const char* c) {
-  int len = strlen(c);
+bool H_Radio::popCommand(MotorCommand& cmd) {
+  return xQueueReceive(command_queue_, &cmd, 0) == pdTRUE;
+}
 
-  sendATf("AT+SEND=%i,%i,%s", recvr_address_, len, c);
+bool H_Radio::parsePacket(const char* packet, MotorCommand& cmd) {
+  if (packet == nullptr) {
+    return false;
+  }
+
+  if (strncmp(packet, "+RCV=", 5) != 0) {
+    return false;
+  }
+
+  char temp[kMaxPacketSize];
+
+  strncpy(temp, packet, sizeof(temp) - 1);
+  temp[sizeof(temp) - 1] = '\0';
+
+  char* context = nullptr;
+
+  strtok_r(temp, "=", &context);
+
+  char* token = strtok_r(nullptr, ",", &context);
+  if (token == nullptr) {
+    return false;
+  }
+
+  token = strtok_r(nullptr, ",", &context);
+  if (token == nullptr) {
+    return false;
+  }
+
+  const int data_length = atoi(token);
+
+  token = strtok_r(nullptr, ",", &context);
+  if (token == nullptr) {
+    return false;
+  }
+
+  char data[64];
+
+  strncpy(data, token, sizeof(data) - 1);
+  data[sizeof(data) - 1] = '\0';
+
+  if (static_cast<int>(strlen(data)) != data_length) {
+    return false;
+  }
+
+  char* data_context = nullptr;
+
+  char* command_token = strtok_r(data, "+", &data_context);
+  char* speed_token = strtok_r(nullptr, "+", &data_context);
+  char* duration_token = strtok_r(nullptr, "+", &data_context);
+
+  if (command_token == nullptr || speed_token == nullptr ||
+      duration_token == nullptr) {
+    return false;
+  }
+
+  strncpy(cmd.command, command_token, sizeof(cmd.command) - 1);
+  cmd.command[sizeof(cmd.command) - 1] = '\0';
+
+  cmd.speed = atoi(speed_token);
+  cmd.duration_ms = atoi(duration_token);
+
+  cmd.valid = true;
+
+  return true;
 }
